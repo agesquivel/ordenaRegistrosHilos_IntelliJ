@@ -2,6 +2,7 @@ package application;
 	
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.layout.VBox;
@@ -14,6 +15,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.util.Duration;
 
 public class Main extends Application {
 	@Override
@@ -44,8 +46,15 @@ public class Main extends Application {
 			vbxProgreso.getChildren().addAll(hbxAvance, hbxAvance2, hbxAvance3);
 		    root.setCenter(vbxProgreso);
 
-			ServicioActualizaProgreso servAvance =  new ServicioActualizaProgreso(txtRegistros,
+			ServicioActualizaProgreso servAvance = new ServicioActualizaProgreso(txtRegistros,
 					progressBar2, progressIndicator2);
+
+			ScheduledServiceActualizaProgreso servProgramado = new ScheduledServiceActualizaProgreso(txtRegistros,
+					progressBar3, progressIndicator3);
+
+			servProgramado.setDelay(Duration.seconds(5));
+			servProgramado.setPeriod(Duration.seconds(10));
+			servProgramado.setMaximumFailureCount(10);
 
 		    Button btnIniciar = new Button("Iniciar");
 		    
@@ -96,11 +105,17 @@ public class Main extends Application {
 						hiloExterno3.setDaemon(true);
 						hiloExterno3.start();
 */
-
-						if (servAvance.isRunning())
+						if (servAvance.isRunning() || (servAvance.getState() == Worker.State.SUCCEEDED))
 							servAvance.restart();
-						else servAvance.start();
+						else
+							if (servAvance.getState() == Worker.State.READY)
+								servAvance.start();
 
+						if (servProgramado.isRunning() || (servProgramado.getState() == Worker.State.SUCCEEDED))
+							servProgramado.restart();
+						else
+							if (servProgramado.getState() == Worker.State.READY)
+								servProgramado.start();
 
 						//Thread.sleep(1000);
 					//} catch (InterruptedException e) {
@@ -113,7 +128,7 @@ public class Main extends Application {
 		    root.setBottom(btnIniciar);
 		    
 			Scene scene = new Scene(root,400,400);
-			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+			//scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
 		} catch(Exception e) {
